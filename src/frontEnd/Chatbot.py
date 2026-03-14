@@ -17,7 +17,6 @@ class ChatbotGUI(QWidget):
         super().__init__()
         self.setWindowTitle("AI Chatbot")
         self.setFixedSize(400, 250)
-        
         self.chat_history = []
         
         layout = QVBoxLayout(self)
@@ -39,15 +38,47 @@ class ChatbotGUI(QWidget):
         layout.addLayout(input_layout)
         self.move_to_bottom_right()
 
+    def get_netlist_content(self):
+        """Finds and reads the current project's .cir file."""
+        try:
+            self.obj_appconfig = Appconfig()
+            proj_info = self.obj_appconfig.current_project
+            if proj_info and "ProjectName" in proj_info:
+                proj_dir = proj_info["ProjectName"]
+                proj_name = os.path.basename(proj_dir.rstrip(os.sep))
+                netlist_path = os.path.join(proj_dir, f"{proj_name}.cir")
+
+                if os.path.exists(netlist_path):
+                    with open(netlist_path, "r") as f:
+                        return f.read()
+        except Exception as e:
+            print(f"Error fetching netlist: {e}")
+        return None
+
     def ask_ollama(self):
         user_text = self.user_input.text().strip()
         if not user_text:
             return
         
+        # 1. Fetch Netlist Context (The Proposal Implementation)
+        netlist = self.get_netlist_content()
+        
+        # 2. Update History
         self.chat_history = (self.chat_history + [f"User: {user_text}"])[-4:]
         self.chat_display.append(f"You: {user_text}")
         
-        self.worker = OllamaWorker(self.chat_history)
+        # 3. Create a context-aware prompt
+        if netlist:
+            # We explicitly tell the AI to look at the netlist
+            context_prompt = (
+                f"Analyze this eSim Netlist:\n{netlist}\n\n"
+                f"User Question: {user_text}"
+            )
+        else:
+            context_prompt = user_text
+        
+        # 4. Pass the context_prompt to the worker
+        self.worker = OllamaWorker(context_prompt) 
         self.worker.response_signal.connect(self.display_response)
         self.worker.start()
         
@@ -69,15 +100,30 @@ class ChatbotGUI(QWidget):
         """Clear the chat display."""
         self.chat_display.clear()
         self.chat_history=[]
+
     def debug_ollama(self):
-        """Send log to Ollama and get response asynchronously."""
-        self.chat_display.append(f"============Simulation Failed=============\n")
-        user_text = self.user_input.text().strip()
-        self.worker = OllamaWorker(user_text)
+        """Send log AND netlist to Ollama for failed simulation analysis."""
+        self.chat_display.append(f"============ Simulation Failed =============\n")
+        error_log = self.user_input.text().strip()
+        
+        # Get the netlist to help the AI understand the context of the error
+        netlist = self.get_netlist_content()
+        
+        if netlist:
+            combined_query = (
+                f"SIMULATION ERROR LOG:\n{error_log}\n\n"
+                f"CORRESPONDING NETLIST:\n{netlist}\n\n"
+                "Please analyze the error based on this netlist."
+            )
+        else:
+            combined_query = error_log
+
+        # Pass the combined data to the worker
+        self.worker = OllamaWorker(combined_query)
         self.worker.response_signal.connect(self.display_response)
         self.worker.start()
-        self.user_input.clear()  # Clear input field
-
+        self.user_input.clear()
+    
     def debug_error(self, log):
         self.chat_history = []
         if os.path.exists(log):
@@ -100,3 +146,4 @@ class ChatbotGUI(QWidget):
             with open(output_file, "w") as f:
                 f.writelines(filtered_lines)
             self.debug_ollama()
+
