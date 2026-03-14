@@ -109,11 +109,11 @@ The launcher offers two display modes:
 
 Both modes work on all platforms - the launcher will guide you through any required setup.
 
-Note for MAC to be run in X11 mode:
--- Install XQuartz on the Mac if you haven't already. You can download it from the [XQuartz](https://www.xquartz.org/) website.
--- Enable network connections in XQuartz: Go to XQuartz > Preferences > Security tab, and check "Allow connections from network clients".
--- Restart XQuartz and then restart your Docker application after making changes to the security settings.
--- Run xhost +localhost in your Mac's terminal before running the Docker container. This allows local connections to your X server. 
+**Note for MAC to be run in X11 mode:**</br>
+- **Install XQuartz on the Mac** if you haven't already. You can download it from the [XQuartz](https://www.xquartz.org/) website.</br>
+- **Enable network connections in XQuartz:** Go to XQuartz > Preferences > Security tab, and check "Allow connections from network clients".</br>
+- **Restart XQuartz** and then restart your Docker application after making changes to the security settings.</br>
+- **Run xhost +localhost** in your Mac's terminal before running the Docker container. This allows local connections to your X server. </br>
 Run the following command in a terminal:
 ```
 xhost +localhost
