@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="../../releases/docker-launcher-v1.0.0">Download Launcher</a> •
+  <a href="https://github.com/FOSSEE/eSim/releases/tag/docker-launcher-v1.0.0">Download Launcher</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#troubleshooting">Troubleshooting</a>
 </p>
